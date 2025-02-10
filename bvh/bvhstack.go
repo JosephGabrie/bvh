@@ -1,30 +1,31 @@
 package collision
 
 import (
-	. "github.com/briannoyama/s_engine/math32"
+	"github.com/briannoyama/bvh/math32"
+	. "github.com/briannoyama/bvh/math32"
 )
 
 // OrthStack gives methods for working with BVol (implemented by orthStack)
-type OrthStack interface {
+type OrthStack[T VolumeType[T]] interface {
 	Reset()
 	HasNext() bool
-	Next() *BVol
-	Trace(o *Orthotope) (*Orthotope, int32)
-	Query(o *Orthotope) *Orthotope
-	Add(orth *Orthotope) bool
-	Contains(orth *Orthotope) bool
-	Remove(o *Orthotope) bool
+	Next() *BVol[T]
+	Trace(o T) (T, int32)
+	Query(o T) T
+	Add(orth T) bool
+	Contains(orth T) bool
+	Remove(o T) bool
 }
 
 // orthStack provides memory efficient stack based methods for manipulating BVHs.
-type orthStack struct {
-	bvh      *BVol
-	bvStack  []*BVol
+type orthStack[T VolumeType[T]] struct {
+	bvh      *BVol[T]
+	bvStack  []*BVol[T]
 	intStack []int32
 }
 
 // Reset the stack to its initial state (see BVol.Iterator).
-func (s *orthStack) Reset() {
+func (s *orthStack[T]) Reset() {
 	s.intStack = s.intStack[:0]
 	s.bvStack = s.bvStack[:0]
 	s.bvStack = append(s.bvStack, s.bvh)
@@ -32,20 +33,20 @@ func (s *orthStack) Reset() {
 }
 
 // HasNext return true iff the tree has uniterated elements. See Next.
-func (s *orthStack) HasNext() bool {
+func (s *orthStack[T]) HasNext() bool {
 	return len(s.bvStack) > 0
 }
 
-func (s *orthStack) append(bvol *BVol, index int32) {
+func (s *orthStack[T]) append(bvol *BVol[T], index int32) {
 	s.bvStack = append(s.bvStack, bvol)
 	s.intStack = append(s.intStack, index)
 }
 
-func (s *orthStack) peek() (*BVol, int32) {
+func (s *orthStack[T]) peek() (*BVol[T], int32) {
 	return s.bvStack[len(s.bvStack)-1], s.intStack[len(s.intStack)-1]
 }
 
-func (s *orthStack) pop() (*BVol, int32) {
+func (s *orthStack[T]) pop() (*BVol[T], int32) {
 	bvol, index := s.peek()
 	s.bvStack = s.bvStack[:len(s.bvStack)-1]
 	s.intStack = s.intStack[:len(s.intStack)-1]
@@ -55,7 +56,7 @@ func (s *orthStack) pop() (*BVol, int32) {
 // Next iterates through the tree by modifying the stack in place. The stack will be
 // organized such that peek reflects the next value that will be returned.
 // In this way, next pops off an element while traversing the tree in pre-order.
-func (s *orthStack) Next() *BVol {
+func (s *orthStack[T]) Next() *BVol[T] {
 	bvolPrev, _ := s.peek()
 
 	if s.traceUp() {
@@ -68,7 +69,7 @@ func (s *orthStack) Next() *BVol {
 }
 
 // Goes up the tree until it finds the next unvisited child index, after looking at parents.
-func (s *orthStack) traceUp() bool {
+func (s *orthStack[T]) traceUp() bool {
 	bvol, index := s.peek()
 	for bvol.depth == 0 || index >= 2 {
 		s.pop()
@@ -85,7 +86,7 @@ func (s *orthStack) traceUp() bool {
 	return true
 }
 
-func (s *orthStack) queryNext(o *Orthotope) *BVol {
+func (s *orthStack[T]) queryNext(o T) *BVol[T] {
 	bvol, index := s.peek()
 	for bvol.depth > 0 {
 		if index >= 2 {
@@ -105,7 +106,7 @@ func (s *orthStack) queryNext(o *Orthotope) *BVol {
 }
 
 // Duplicate of queryNext using "Instersects" instead for higher performance.
-func (s *orthStack) intersectsNext(orth *Orthotope, delta *Coordinate) (*BVol, float32) {
+func (s *orthStack[T]) intersectsNext(orth *Orthotope, delta *Coordinate) (*BVol[T], float32) {
 	bvol, index := s.peek()
 	distance := float32(-1)
 	for bvol.depth > 0 {
@@ -129,7 +130,7 @@ func (s *orthStack) intersectsNext(orth *Orthotope, delta *Coordinate) (*BVol, f
 
 // Query looks for intersections between the orth, o, and the BVH
 // returning one intersection at a time.
-func (s *orthStack) Query(o *Orthotope) *Orthotope {
+func (s *orthStack[T]) Query(o T) T {
 	// When the stack is empty, there are no more volumes to return.
 	if !s.HasNext() {
 		return nil
@@ -146,7 +147,7 @@ func (s *orthStack) Query(o *Orthotope) *Orthotope {
 
 // Intersects traces the path of a moving orth through the BVH returning an orth and the distance from the
 // source orth's origin along it's delta. It does not guarantee order.
-func (s *orthStack) Intersects(orth *Orthotope, delta *Coordinate) (*Orthotope, float32) {
+func (s *orthStack[T]) Intersects(orth T, delta *math32.Coordinate) (*Orthotope, float32) {
 	if !s.HasNext() {
 		return nil, -1
 	}
@@ -160,7 +161,7 @@ func (s *orthStack) Intersects(orth *Orthotope, delta *Coordinate) (*Orthotope, 
 	return bvol.vol, distance
 }
 
-func (s *orthStack) path(o *Orthotope) *BVol {
+func (s *orthStack[T]) path(o *Orthotope) *BVol[T] {
 	bvol, index := s.peek()
 	for bvol.vol != o && s.HasNext() {
 		if bvol.depth == 0 {
@@ -188,7 +189,7 @@ func (s *orthStack) path(o *Orthotope) *BVol {
 }
 
 // Contains returns true iff the orthotope is stored within the BVH.
-func (s *orthStack) Contains(o *Orthotope) bool {
+func (s *orthStack[T]) Contains(o *Orthotope) bool {
 	s.Reset()
 	bvol := s.path(o)
 
@@ -197,7 +198,7 @@ func (s *orthStack) Contains(o *Orthotope) bool {
 }
 
 // Add an orth to a Bounding Volume Hierarchy. Only add to root volume.
-func (s *orthStack) Add(orth *Orthotope) bool {
+func (s *orthStack[T]) Add(orth *Orthotope) bool {
 	s.Reset()
 	bvol := s.bvh
 	if bvol.vol == nil {
@@ -210,8 +211,8 @@ func (s *orthStack) Add(orth *Orthotope) bool {
 	for next := bvol; next.vol != orth; next = next.desc[lowIndex] {
 		if next.depth == 0 {
 			// We've reached a leaf node, and we need to insert a parent node.
-			next.desc[0] = &BVol{vol: orth}
-			next.desc[1] = &BVol{vol: next.vol}
+			next.desc[0] = &BVol[T]{vol: orth}
+			next.desc[1] = &BVol[T]{vol: next.vol}
 			next.depth = 1
 			comp = *next.vol
 			next.vol = &comp
@@ -244,7 +245,7 @@ func (s *orthStack) Add(orth *Orthotope) bool {
 }
 
 // Remove an orth from the BVH associated with this stack.
-func (s *orthStack) Remove(o *Orthotope) bool {
+func (s *orthStack[T]) Remove(o T) bool {
 	s.Reset()
 	bvol := s.path(o)
 	if o == bvol.vol {
@@ -273,7 +274,7 @@ func (s *orthStack) Remove(o *Orthotope) bool {
 }
 
 // Score returns the total score of all children by adding scores of volumes (sum of length of edges) for each volume.
-func (s *orthStack) Score() float32 {
+func (s *orthStack[T]) Score() float32 {
 	s.Reset()
 	var score float32
 
@@ -284,7 +285,7 @@ func (s *orthStack) Score() float32 {
 }
 
 // rebalanceAdd attempts rebalancing when the depth of the tree has potentially increased.
-func (s *orthStack) rebalanceAdd() {
+func (s *orthStack[T]) rebalanceAdd() {
 	gParent, gIndex := s.pop()
 	for s.HasNext() {
 		parent, pIndex := gParent, gIndex
@@ -306,7 +307,7 @@ func (s *orthStack) rebalanceAdd() {
 }
 
 // Attempt rebalancing when the depth of the tree has potentially decreased.
-func (s *orthStack) rebalanceRemove() {
+func (s *orthStack[T]) rebalanceRemove() {
 	for s.HasNext() {
 		parent, pIndex := s.pop()
 

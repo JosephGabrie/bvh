@@ -1,7 +1,8 @@
 package collision
 
 import (
-	. "github.com/briannoyama/s_engine/math32"
+	. "github.com/briannoyama/bvh/math32"
+
 	"strings"
 	"testing"
 )
@@ -9,7 +10,7 @@ import (
 func TestTopDownBVH(t *testing.T) {
 	orths := make([]*Orthotope, len(leaf))
 	copy(orths, leaf[:])
-	tree := TopDownBVH(orths)
+	tree := TopDownBVH[*Orthotope](orths)
 	if tree.Score() > 262 {
 		t.Errorf("Inefficient BVH created via TopDown:\n%v", tree.String())
 	}
@@ -18,7 +19,7 @@ func TestTopDownBVH(t *testing.T) {
 func TestAdd(t *testing.T) {
 	scores := [10]float32{4, 26, 57, 77, 100, 120, 135, 188, 218, 247}
 
-	tree := &BVol{}
+	tree := &BVol[*Orthotope]{}
 	for index, orth := range leaf {
 		if !tree.Add(orth) {
 			t.Errorf("Unable to add: %v\n", orth.String())

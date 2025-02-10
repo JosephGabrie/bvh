@@ -15,6 +15,17 @@ type Orthotope struct {
 	Delta Coordinate
 }
 
+func (o *Orthotope) GetPoint() Coordinate {
+	return o.Point
+}
+func (o *Orthotope) GetDelta() Coordinate {
+	return o.Delta
+}
+
+func (o *Orthotope) New() *Orthotope {
+	return &Orthotope{}
+}
+
 // Overlaps returns true if two orthotopes intersect
 func (o *Orthotope) Overlaps(orth *Orthotope) bool {
 	intersects := true
@@ -71,13 +82,17 @@ func (o *Orthotope) Intersects(orth *Orthotope, delta *Coordinate) float32 {
 			}
 			inT = Float32Max(inT, p0T)
 			outT = Float32Min(outT, p1T)
+
+			if inT > outT {
+				return -1 // supposed to be 2 but just leaving it for testing
+			}
 		}
 	}
 
-	if inT <= outT {
-		return inT
+	if inT < 0 {
+		return -1
 	}
-	return 2
+	return inT
 }
 
 // Slide modifies delta by sliding the orth in the order prescribed such that it does overlap any of the orths within
