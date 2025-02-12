@@ -7,7 +7,7 @@ import (
 )
 
 func TestNext(t *testing.T) {
-	bvs := []*BVol{
+	bvs := []*BVol[*Orthotope]{
 		{
 			vol: &Orthotope{
 				Point: Coordinate{2, 2},
@@ -28,7 +28,7 @@ func TestNext(t *testing.T) {
 		},
 	}
 
-	bvs[0].desc = [2]*BVol{bvs[1], bvs[2]}
+	bvs[0].desc = [2]*BVol[*Orthotope]{bvs[1], bvs[2]}
 	bvs[0].depth = 1
 
 	iter := bvs[0].Iterator()
@@ -81,7 +81,7 @@ func TestQuery(t *testing.T) {
 			t.Errorf("Querying %v did not return %v\n", q.String(), orth.String())
 		}
 	}
-	iter := (&BVol{}).Iterator()
+	iter := (&BVol[*Orthotope]{}).Iterator()
 	if iter.Query(leaf[0]) != nil {
 		t.Errorf("Querying an empty hierarchy returned non nil value!\n")
 	}
@@ -146,7 +146,7 @@ func TestIntersects(t *testing.T) {
 				q.String(), delta[in], orth.String())
 		}
 	}
-	iter := (&BVol{}).Iterator()
+	iter := (&BVol[*Orthotope]{}).Iterator()
 	if r, _ := iter.Intersects(leaf[0], delta[0]); r != nil {
 		t.Errorf("Intersection for an empty hierarchy returned non nil value!\n")
 	}

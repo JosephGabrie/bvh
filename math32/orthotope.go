@@ -37,6 +37,8 @@ func (o *Orthotope) Overlaps(orth *Orthotope) bool {
 	return intersects
 }
 
+// In math32/orthotope.go
+
 // Contains returns true if all of orth is within the bounds of o. Ie. the intersection is equivalent to orth
 func (o *Orthotope) Contains(orth *Orthotope) bool {
 	contains := true
