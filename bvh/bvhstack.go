@@ -117,7 +117,7 @@ func (s *orthStack[T]) intersectsNext(orth *Orthotope, delta *Coordinate) (*BVol
 		} else {
 			distance = bvol.desc[index].vol.Intersects(orth, delta)
 			// If distance is between 0 and 1
-			if distance <= 1 {
+			if distance >= 0 && distance <= 1 {
 				s.append(bvol.desc[index], 0)
 			} else {
 				s.intStack[len(s.intStack)-1]++
