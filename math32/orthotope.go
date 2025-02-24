@@ -154,13 +154,21 @@ func (o *Orthotope) Score() float32 {
 	}
 	return score
 }
+func (o *Orthotope) IsNil() bool {
+	return o == nil
+}
+func (o *Orthotope) IsSame(other *Orthotope) bool {
+	return o == other
+}
 
 // Equals checks if two Orthotopes are equivalent (but not necessarily the same in memory)
 func (o *Orthotope) Equals(other *Orthotope) bool {
-	for index, point := range other.Point {
-		if o.Point[index] != point {
-			return false
-		} else if o.Delta[index] != other.Delta[index] {
+	if o == nil || other == nil {
+		return o == other
+	}
+
+	for i := range o.Point {
+		if o.Point[i] != other.Point[i] || o.Delta[i] != other.Delta[i] {
 			return false
 		}
 	}

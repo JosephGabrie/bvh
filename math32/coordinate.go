@@ -2,6 +2,7 @@ package math32
 
 import (
 	"fmt"
+	"math"
 	"strings"
 )
 
@@ -53,24 +54,13 @@ func (c *IntCoordinate) LessThan(other *IntCoordinate) bool {
 	return false
 }
 
-// Add modifies the Coordinate in place
-func (c *Coordinate) Add(other *Coordinate) {
-	for i, dim := range other {
-		c[i] += dim
-	}
-}
-
 // Invert modifies the Coordinate in place
 func (c *Coordinate) Invert() {
 	for i, dim := range c {
+		if dim == 0 {
+			panic("division by zero in Coordinate.Invert")
+		}
 		c[i] = 1 / dim
-	}
-}
-
-// Sub modifies the Coordinate in place
-func (c *Coordinate) Sub(other *Coordinate) {
-	for i, dim := range other {
-		c[i] -= dim
 	}
 }
 
@@ -129,4 +119,75 @@ func (c *Coordinate) Score() float32 {
 		score += Float32Abs(d)
 	}
 	return score
+}
+
+// Sub modifies the Coordinate in place
+func (c *Coordinate) SubInPlace(other *Coordinate) {
+	for i, dim := range other {
+		c[i] -= dim
+	}
+}
+
+func (c Coordinate) Sub(other Coordinate) Coordinate {
+	result := c
+	for i := range result {
+		result[i] -= other[i]
+	}
+	return result
+
+}
+
+// Add modifies the Coordinate in place
+func (c Coordinate) Add(other Coordinate) Coordinate {
+	result := c
+	for i := range result {
+		result[i] += other[i]
+	}
+	return result
+}
+
+func (c Coordinate) Scale(factor float32) Coordinate {
+	result := c
+	for i := range result {
+		result[i] *= factor
+	}
+	return result
+}
+
+func (c Coordinate) Dot(other Coordinate) float32 {
+	var sum float32
+	for i := range c {
+		sum += c[i] * other[i]
+	}
+	return sum
+}
+
+func (c Coordinate) DistanceSq(other Coordinate) float32 {
+	var sum float32
+	for i := range c {
+		diff := c[i] - other[i]
+		sum += diff * diff
+	}
+	return sum
+}
+
+func (c Coordinate) Equals(other Coordinate) bool {
+	for i := range c {
+		if c[i] != other[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func (c Coordinate) Fill(value float32) Coordinate {
+	result := Coordinate{}
+	for i := range result {
+		result[i] = value
+	}
+	return result
+}
+
+func (c Coordinate) Length() float32 {
+	return float32(math.Sqrt(float64(c.DistanceSq(Coordinate{}))))
 }

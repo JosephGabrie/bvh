@@ -106,7 +106,7 @@ func (s *orthStack[T]) queryNext(o T) *BVol[T] {
 }
 
 // Duplicate of queryNext using "Instersects" instead for higher performance.
-func (s *orthStack[T]) intersectsNext(orth *Orthotope, delta *Coordinate) (*BVol[T], float32) {
+func (s *orthStack[T]) intersectsNext(orth T, delta *Coordinate) (*BVol[T], float32) {
 	bvol, index := s.peek()
 	distance := float32(-1)
 	for bvol.depth > 0 {
@@ -133,11 +133,13 @@ func (s *orthStack[T]) intersectsNext(orth *Orthotope, delta *Coordinate) (*BVol
 func (s *orthStack[T]) Query(o T) T {
 	// When the stack is empty, there are no more volumes to return.
 	if !s.HasNext() {
-		return nil
+		var zero T
+		return zero
 	}
 	bvol := s.queryNext(o)
 	if !s.HasNext() {
-		return nil
+		var zero T
+		return zero
 	}
 
 	// Use trace up to get the next possible branch.
@@ -147,13 +149,14 @@ func (s *orthStack[T]) Query(o T) T {
 
 // Intersects traces the path of a moving orth through the BVH returning an orth and the distance from the
 // source orth's origin along it's delta. It does not guarantee order.
-func (s *orthStack[T]) Intersects(orth T, delta *math32.Coordinate) (*Orthotope, float32) {
+func (s *orthStack[T]) Intersects(orth T, delta *math32.Coordinate) (T, float32) {
+	var zero T
 	if !s.HasNext() {
-		return nil, -1
+		return zero, -1
 	}
 	bvol, distance := s.intersectsNext(orth, delta)
 	if !s.HasNext() {
-		return nil, -1
+		return zero, -1
 	}
 
 	// Use trace up to get the next possible branch.
@@ -161,9 +164,9 @@ func (s *orthStack[T]) Intersects(orth T, delta *math32.Coordinate) (*Orthotope,
 	return bvol.vol, distance
 }
 
-func (s *orthStack[T]) path(o *Orthotope) *BVol[T] {
+func (s *orthStack[T]) path(o T) *BVol[T] {
 	bvol, index := s.peek()
-	for bvol.vol != o && s.HasNext() {
+	for !bvol.vol.Equals(o) && s.HasNext() {
 		if bvol.depth == 0 {
 			if !s.traceUp() {
 				break
@@ -189,47 +192,56 @@ func (s *orthStack[T]) path(o *Orthotope) *BVol[T] {
 }
 
 // Contains returns true iff the orthotope is stored within the BVH.
-func (s *orthStack[T]) Contains(o *Orthotope) bool {
+// Contains returns true iff the exact orthotope instance is stored within the BVH
+func (s *orthStack[T]) Contains(o T) bool {
 	s.Reset()
-	bvol := s.path(o)
-
-	// Check that the orth is the last thing from the path.
-	return o == bvol.vol
+	for s.HasNext() {
+		bvol := s.Next()
+		if bvol.vol.IsSame(o) {
+			return true
+		}
+	}
+	return false
 }
 
 // Add an orth to a Bounding Volume Hierarchy. Only add to root volume.
-func (s *orthStack[T]) Add(orth *Orthotope) bool {
+func (s *orthStack[T]) Add(orth T) bool {
+
+	if s.Contains(orth) {
+		return false
+	}
+
 	s.Reset()
 	bvol := s.bvh
-	if bvol.vol == nil {
+	if bvol.vol.IsNil() {
 		// Add by setting the vol when there is no volumes.
 		bvol.vol = orth
+		return true
 	}
-	comp := Orthotope{}
 	lowIndex := int32(-1)
 
-	for next := bvol; next.vol != orth; next = next.desc[lowIndex] {
+	for next := bvol; !next.vol.Equals(orth); next = next.desc[lowIndex] {
 		if next.depth == 0 {
 			// We've reached a leaf node, and we need to insert a parent node.
+			if next.vol.IsSame(orth) {
+				return false
+			}
+
 			next.desc[0] = &BVol[T]{vol: orth}
 			next.desc[1] = &BVol[T]{vol: next.vol}
 			next.depth = 1
-			comp = *next.vol
-			next.vol = &comp
+			comp := orth.New()
+			comp.MinBounds(orth, next.vol)
+			next.vol = comp
 			lowIndex = int32(0)
 		} else {
 			// We cannot add the orth here. Descend.
-			smallestScore := MAXVAL
+			smallestScore := math32.MAXVAL
+			for index := range next.desc {
+				temp := next.desc[index].vol.New()
+				temp.MinBounds(orth, next.desc[index].vol)
+				score := temp.Score() - next.desc[index].vol.Score()
 
-			for index, vol := range next.desc {
-				comp.MinBounds(orth, vol.vol)
-
-				if vol.vol == orth {
-					// The volume has already been added.
-					return false
-				}
-
-				score := comp.Score() - vol.vol.Score()
 				if score < smallestScore {
 					lowIndex = int32(index)
 					smallestScore = score
@@ -246,9 +258,10 @@ func (s *orthStack[T]) Add(orth *Orthotope) bool {
 
 // Remove an orth from the BVH associated with this stack.
 func (s *orthStack[T]) Remove(o T) bool {
+	var zero T
 	s.Reset()
 	bvol := s.path(o)
-	if o == bvol.vol {
+	if bvol.vol.Equals(o) {
 		s.pop()
 		if s.HasNext() {
 			parent, pIndex := s.pop()
@@ -266,7 +279,7 @@ func (s *orthStack[T]) Remove(o T) bool {
 			}
 		} else {
 			// For depths of 0, delete by removing the volume.
-			bvol.vol = nil
+			bvol.vol = zero
 		}
 		return true
 	}

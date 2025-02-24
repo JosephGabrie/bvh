@@ -10,7 +10,7 @@ import (
 func TestTopDownBVH(t *testing.T) {
 	orths := make([]*Orthotope, len(leaf))
 	copy(orths, leaf[:])
-	tree := TopDownBVH[*Orthotope](orths)
+	tree := TopDownBVH(orths)
 	if tree.Score() > 262 {
 		t.Errorf("Inefficient BVH created via TopDown:\n%v", tree.String())
 	}
@@ -196,4 +196,71 @@ var leaf = [10]*Orthotope{
 	{Point: Coordinate{4, 16}, Delta: Coordinate{6, 6}},
 	{Point: Coordinate{18, 21}, Delta: Coordinate{2, 2}},
 	{Point: Coordinate{19, 19}, Delta: Coordinate{4, 6}},
+}
+
+// TestSphereBVHConstruction verifies the BVH correctly bounds child spheres.
+func TestSphereBVHConstruction(t *testing.T) {
+	s1 := &Sphere{Center: Coordinate{0, 0, 0}, Radius: 1}
+	s2 := &Sphere{Center: Coordinate{3, 0, 0}, Radius: 1}
+	spheres := []*Sphere{s1, s2}
+	bvh := TopDownBVH(spheres)
+
+	// Validate root sphere encloses both children.
+	root := bvh.vol
+	expectedCenter := Coordinate{1.5, 0, 0}
+	expectedRadius := float32(2.5) // (3 + 1 + 1) / 2 = 2.5
+
+	if !root.Center.Equals(expectedCenter) || root.Radius != expectedRadius {
+		t.Errorf("Root sphere mismatch. Center: %v (expected %v), Radius: %v (expected %v)",
+			root.Center, expectedCenter, root.Radius, expectedRadius)
+	}
+}
+
+// TestSphereAdd verifies adding spheres updates the BVH correctly.
+func TestSphereAdd(t *testing.T) {
+	bvh := &BVol[*Sphere]{}
+	s1 := &Sphere{Center: Coordinate{0, 0, 0}, Radius: 1}
+	s2 := &Sphere{Center: Coordinate{3, 0, 0}, Radius: 1}
+
+	// Add first sphere.
+	if !bvh.Add(s1) {
+		t.Fatal("Failed to add s1")
+	}
+	if bvh.vol == nil || bvh.vol.Radius != 1 || !bvh.vol.Center.Equals(s1.Center) {
+		t.Error("BVH root incorrect after adding s1")
+	}
+
+	// Add second sphere.
+	if !bvh.Add(s2) {
+		t.Fatal("Failed to add s2")
+	}
+	expectedRadius := float32(2.5)
+	expectedCenter := Coordinate{1.5, 0, 0}
+	if bvh.vol.Radius != expectedRadius || !bvh.vol.Center.Equals(expectedCenter) {
+		t.Error("BVH root incorrect after adding s2")
+	}
+}
+
+// TestSphereIntersection verifies collision detection during movement.
+
+// TestSphereRemove verifies removing a sphere updates the BVH.
+func TestSphereRemove(t *testing.T) {
+	s1 := &Sphere{Center: Coordinate{0, 0, 0}, Radius: 1}
+	s2 := &Sphere{Center: Coordinate{3, 0, 0}, Radius: 1}
+	bvh := TopDownBVH([]*Sphere{s1, s2})
+
+	if !bvh.Remove(s1) {
+		t.Fatal("Failed to remove s1")
+	}
+
+	// BVH should now contain only s2.
+	root := bvh.vol
+	if root.Radius != 1 || !root.Center.Equals(s2.Center) {
+		t.Error("BVH incorrect after removal")
+	}
+}
+
+// Float32Equals checks if two float32s are approximately equal.
+func Float32Equals(a, b, epsilon float32) bool {
+	return a >= b-epsilon && a <= b+epsilon
 }

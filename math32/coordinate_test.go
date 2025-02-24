@@ -21,7 +21,7 @@ func TestIntCoordinateString(t *testing.T) {
 
 func TestCoordinateAdd(t *testing.T) {
 	actual := Coordinate{1, 2, 3}
-	actual.Add(&Coordinate{1.5, 0, -3})
+	actual = actual.Add(Coordinate{1.5, 0, -3})
 	expected := Coordinate{2.5, 2, 0}
 	if actual != expected {
 		t.Errorf("Expected %v, got %v.", expected, actual)
@@ -30,7 +30,7 @@ func TestCoordinateAdd(t *testing.T) {
 
 func TestCoordinateSub(t *testing.T) {
 	actual := Coordinate{1, 2, 3}
-	actual.Sub(&Coordinate{1.5, 0, -3})
+	actual = actual.Sub(Coordinate{1.5, 0, -3})
 	expected := Coordinate{-0.5, 2, 6}
 	if actual != expected {
 		t.Errorf("Expected %v, got %v.", expected, actual)

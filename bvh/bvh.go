@@ -14,17 +14,18 @@ import (
 // BVol Bounding Volume for orthotopes. Wraps the orth and contains descendents.
 
 type VolumeType[T any] interface {
-	*math32.Orthotope
 	MinBounds(volumes ...T)
 	Score() float32
-	Equals(*math32.Orthotope) bool
-	Overlaps(*math32.Orthotope) bool
-	Contains(*math32.Orthotope) bool
-	Intersects(*math32.Orthotope, *math32.Coordinate) float32
+	Equals(T) bool
+	Overlaps(T) bool
+	Contains(T) bool
+	Intersects(T, *math32.Coordinate) float32
 	GetPoint() math32.Coordinate
 	GetDelta() math32.Coordinate
 	String() string
 	New() T
+	IsNil() bool
+	IsSame(T) bool
 }
 type BVol[T VolumeType[T]] struct {
 	vol   T
@@ -198,7 +199,13 @@ func swapCheck[T VolumeType[T]](first *BVol[T], second *BVol[T], secIndex int) {
 
 // Equals true iff bvh volumes are the same. Recursive algorithm
 func (b *BVol[T]) Equals(other *BVol[T]) bool {
-	return (b.depth == 0 && other.depth == 0 && b.vol == other.vol) ||
+	if b.vol.IsNil() != other.vol.IsNil() {
+		return false
+	}
+	if b.vol.IsNil() {
+		return true
+	}
+	return (b.depth == 0 && other.depth == 0 && b.vol.Equals(other.vol)) ||
 		(b.depth > 0 && other.depth > 0 && b.vol.Equals(other.vol) &&
 			((b.desc[0].Equals(other.desc[0]) && b.desc[1].Equals(other.desc[1])) ||
 				(b.desc[1].Equals(other.desc[0]) && b.desc[0].Equals(other.desc[1]))))
@@ -229,7 +236,8 @@ func DrawBVH[T VolumeType[T]](BVol *BVol[T], filename string) {
 
 		c := color.RGBA{R: uint8(255 / (next.depth + 1)), G: uint8(255 / (2*next.depth + 1)),
 			B: uint8(255), A: 255}
-
+		{
+		}
 		point := next.vol.GetPoint()
 		delta := next.vol.GetDelta()
 
