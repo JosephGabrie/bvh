@@ -1,6 +1,7 @@
 package collision
 
 import (
+	"github.com/briannoyama/bvh/math32"
 	. "github.com/briannoyama/bvh/math32"
 
 	"strings"
@@ -8,9 +9,9 @@ import (
 )
 
 func TestTopDownBVH(t *testing.T) {
-	orths := make([]*Orthotope, len(leaf))
+	orths := make([]*math32.Orthotope[float32], len(leaf))
 	copy(orths, leaf[:])
-	tree := TopDownBVH(orths)
+	tree := TopDownBVH[*math32.Orthotope[float32], float32](orths)
 	if tree.Score() > 262 {
 		t.Errorf("Inefficient BVH created via TopDown:\n%v", tree.String())
 	}
@@ -19,7 +20,7 @@ func TestTopDownBVH(t *testing.T) {
 func TestAdd(t *testing.T) {
 	scores := [10]float32{4, 26, 57, 77, 100, 120, 135, 188, 218, 247}
 
-	tree := &BVol[*Orthotope]{}
+	tree := &BVol[*math32.Orthotope[float32], float32]{}
 	for index, orth := range leaf {
 		if !tree.Add(orth) {
 			t.Errorf("Unable to add: %v\n", orth.String())
@@ -52,7 +53,7 @@ func TestRemove(t *testing.T) {
 	tree := getIdealTree()
 
 	// Reordering leaves to remove to test edge cases.
-	var toRemove [9]*Orthotope = [9]*Orthotope{
+	var toRemove [9]*Orthotope[float32] = [9]*Orthotope[float32]{
 		leaf[8],
 		leaf[0],
 		leaf[2],
@@ -126,33 +127,33 @@ func TestDuplicateVol(t *testing.T) {
 	}
 }
 
-func getIdealTree() *BVol[*Orthotope] {
-	tree := &BVol[*Orthotope]{depth: 4,
-		vol: &Orthotope{Point: Coordinate{2, 2}, Delta: Coordinate{21, 23}},
-		desc: [2]*BVol[*Orthotope]{
+func getIdealTree() *BVol[*math32.Orthotope[float32], float32] {
+	tree := &BVol[*math32.Orthotope[float32], float32]{depth: 4,
+		vol: &math32.Orthotope[float32]{Point: Coordinate[float32]{2, 2}, Delta: Coordinate[float32]{21, 23}},
+		desc: [2]*BVol[*math32.Orthotope[float32], float32]{
 			{depth: 3,
-				vol: &Orthotope{Point: Coordinate{16, 2}, Delta: Coordinate{7, 23}},
-				desc: [2]*BVol[*Orthotope]{
+				vol: &math32.Orthotope{Point: Coordinate[float32]{16, 2}, Delta: Coordinate[float32]{7, 23}},
+				desc: [2]*BVol[*math32.Orthotope[float32], float32]{
 					{depth: 1,
-						vol: &Orthotope{Point: Coordinate{18, 19}, Delta: Coordinate{5, 6}},
-						desc: [2]*BVol[*Orthotope]{
+						vol: &math32.Orthotope{Point: Coordinate[float32]{18, 19}, Delta: Coordinate[float32]{5, 6}},
+						desc: [2]*BVol[*math32.Orthotope[float32], float32]{
 							{vol: leaf[8]},
 							{vol: leaf[9]},
 						},
 					},
 					{depth: 2,
-						vol: &Orthotope{Point: Coordinate{16, 2}, Delta: Coordinate{6, 12}},
-						desc: [2]*BVol[*Orthotope]{
+						vol: &math32.Orthotope[float32]{Point: Coordinate[float32]{16, 2}, Delta: Coordinate[float32]{6, 12}},
+						desc: [2]*BVol[*math32.Orthotope[float32], float32]{
 							{depth: 1,
-								vol: &Orthotope{Point: Coordinate{16, 2}, Delta: Coordinate{5, 8}},
-								desc: [2]*BVol[*Orthotope]{
+								vol: &math32.Orthotope{Point: Coordinate[float32]{16, 2}, Delta: Coordinate[float32]{5, 8}},
+								desc: [2]*BVol[*math32.Orthotope[float32], float32]{
 									{vol: leaf[2]},
 									{vol: leaf[3]},
 								},
 							},
 							{depth: 1,
-								vol: &Orthotope{Point: Coordinate{17, 12}, Delta: Coordinate{5, 2}},
-								desc: [2]*BVol[*Orthotope]{
+								vol: &math32.Orthotope[float32]{Point: Coordinate[float32]{17, 12}, Delta: Coordinate[float32]{5, 2}},
+								desc: [2]*BVol[*math32.Orthotope[float32], float32]{
 									{vol: leaf[6]},
 									{vol: leaf[5]},
 								},
@@ -162,18 +163,18 @@ func getIdealTree() *BVol[*Orthotope] {
 				},
 			},
 			{depth: 2,
-				vol: &Orthotope{Point: Coordinate{2, 2}, Delta: Coordinate{10, 20}},
-				desc: [2]*BVol[*Orthotope]{
+				vol: &math32.Orthotope[float32]{Point: Coordinate[float32]{2, 2}, Delta: Coordinate[float32]{10, 20}},
+				desc: [2]*BVol[*math32.Orthotope[float32], float32]{
 					{depth: 1,
-						vol: &Orthotope{Point: Coordinate{4, 11}, Delta: Coordinate{8, 11}},
-						desc: [2]*BVol[*Orthotope]{
+						vol: &math32.Orthotope[float32]{Point: Coordinate[float32]{4, 11}, Delta: Coordinate[float32]{8, 11}},
+						desc: [2]*BVol[*math32.Orthotope[float32], float32]{
 							{vol: leaf[4]},
 							{vol: leaf[7]},
 						},
 					},
 					{depth: 1,
-						vol: &Orthotope{Point: Coordinate{2, 2}, Delta: Coordinate{8, 8}},
-						desc: [2]*BVol[*Orthotope]{
+						vol: &math32.Orthotope[float32]{Point: Coordinate[float32]{2, 2}, Delta: Coordinate[float32]{8, 8}},
+						desc: [2]*BVol[*math32.Orthotope[float32], float32]{
 							{vol: leaf[1]},
 							{vol: leaf[0]},
 						},
@@ -185,29 +186,29 @@ func getIdealTree() *BVol[*Orthotope] {
 	return tree
 }
 
-var leaf = [10]*Orthotope{
-	{Point: Coordinate{2, 2}, Delta: Coordinate{2, 2}},
-	{Point: Coordinate{7, 7}, Delta: Coordinate{3, 3}},
-	{Point: Coordinate{19, 2}, Delta: Coordinate{2, 2}},
-	{Point: Coordinate{16, 6}, Delta: Coordinate{3, 4}},
-	{Point: Coordinate{10, 11}, Delta: Coordinate{2, 2}},
-	{Point: Coordinate{17, 12}, Delta: Coordinate{2, 2}},
-	{Point: Coordinate{20, 12}, Delta: Coordinate{2, 2}},
-	{Point: Coordinate{4, 16}, Delta: Coordinate{6, 6}},
-	{Point: Coordinate{18, 21}, Delta: Coordinate{2, 2}},
-	{Point: Coordinate{19, 19}, Delta: Coordinate{4, 6}},
+var leaf = [10]*Orthotope[float32]{
+	{Point: Coordinate[float32]{2, 2}, Delta: Coordinate[float32]{2, 2}},
+	{Point: Coordinate[float32]{7, 7}, Delta: Coordinate[float32]{3, 3}},
+	{Point: Coordinate[float32]{19, 2}, Delta: Coordinate[float32]{2, 2}},
+	{Point: Coordinate[float32]{16, 6}, Delta: Coordinate[float32]{3, 4}},
+	{Point: Coordinate[float32]{10, 11}, Delta: Coordinate[float32]{2, 2}},
+	{Point: Coordinate[float32]{17, 12}, Delta: Coordinate[float32]{2, 2}},
+	{Point: Coordinate[float32]{20, 12}, Delta: Coordinate[float32]{2, 2}},
+	{Point: Coordinate[float32]{4, 16}, Delta: Coordinate[float32]{6, 6}},
+	{Point: Coordinate[float32]{18, 21}, Delta: Coordinate[float32]{2, 2}},
+	{Point: Coordinate[float32]{19, 19}, Delta: Coordinate[float32]{4, 6}},
 }
 
 // TestSphereBVHConstruction verifies the BVH correctly bounds child spheres.
 func TestSphereBVHConstruction(t *testing.T) {
-	s1 := &Sphere{Center: Coordinate{0, 0, 0}, Radius: 1}
-	s2 := &Sphere{Center: Coordinate{3, 0, 0}, Radius: 1}
-	spheres := []*Sphere{s1, s2}
+	s1 := &Sphere[float32]{Center: Coordinate[float32]{0, 0, 0}, Radius: 1}
+	s2 := &Sphere[float32]{Center: Coordinate[float32]{3, 0, 0}, Radius: 1}
+	spheres := []*Sphere[float32]{s1, s2}
 	bvh := TopDownBVH(spheres)
 
 	// Validate root sphere encloses both children.
 	root := bvh.vol
-	expectedCenter := Coordinate{1.5, 0, 0}
+	expectedCenter := Coordinate[float32]{1.5, 0, 0}
 	expectedRadius := float32(2.5) // (3 + 1 + 1) / 2 = 2.5
 
 	if !root.Center.Equals(expectedCenter) || root.Radius != expectedRadius {
@@ -218,9 +219,9 @@ func TestSphereBVHConstruction(t *testing.T) {
 
 // TestSphereAdd verifies adding spheres updates the BVH correctly.
 func TestSphereAdd(t *testing.T) {
-	bvh := &BVol[*Sphere]{}
-	s1 := &Sphere{Center: Coordinate{0, 0, 0}, Radius: 1}
-	s2 := &Sphere{Center: Coordinate{3, 0, 0}, Radius: 1}
+	bvh := &BVol[*math32.Sphere[float32], float32]{}
+	s1 := &Sphere[float32]{Center: Coordinate[float32]{0, 0, 0}, Radius: 1}
+	s2 := &Sphere[float32]{Center: Coordinate[float32]{3, 0, 0}, Radius: 1}
 
 	// Add first sphere.
 	if !bvh.Add(s1) {
@@ -235,7 +236,7 @@ func TestSphereAdd(t *testing.T) {
 		t.Fatal("Failed to add s2")
 	}
 	expectedRadius := float32(2.5)
-	expectedCenter := Coordinate{1.5, 0, 0}
+	expectedCenter := Coordinate[float32]{1.5, 0, 0}
 	if bvh.vol.Radius != expectedRadius || !bvh.vol.Center.Equals(expectedCenter) {
 		t.Error("BVH root incorrect after adding s2")
 	}
@@ -245,16 +246,15 @@ func TestSphereAdd(t *testing.T) {
 
 // TestSphereRemove verifies removing a sphere updates the BVH.
 func TestSphereRemove(t *testing.T) {
-	s1 := &Sphere{Center: Coordinate{0, 0, 0}, Radius: 1}
-	s2 := &Sphere{Center: Coordinate{3, 0, 0}, Radius: 1}
-	bvh := TopDownBVH]([]*Sphere{s1, s2})
+	s1 := &math32.Sphere[float32]{Center: math32.Coordinate[float32]{0, 0, 0}, Radius: 1}
+	s2 := &math32.Sphere[float32]{Center: math32.Coordinate[float32]{3, 0, 0}, Radius: 1}
+	bvh := TopDownBVH[*math32.Sphere[float32], float32](VolumeType[float32]{s1, s2})
 
 	if !bvh.Remove(s1) {
 		t.Fatal("Failed to remove s1")
 	}
 
-	// BVH should now contain only s2.
-	root := bvh.vol
+	root := bvh.vol.(*math32.Sphere[float32])
 	if root.Radius != 1 || !root.Center.Equals(s2.Center) {
 		t.Error("BVH incorrect after removal")
 	}

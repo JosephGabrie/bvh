@@ -70,17 +70,26 @@ func (orth *Orthotope) Intersects(o *Orthotope) int32 {
 }
 
 func (o *Orthotope) MinBounds(others ...*Orthotope) {
+	if len(others) == 0 {
+		return
+	}
+
 	o.Point = others[0].Point
 	o.Delta = others[0].Delta
 
-	for index, p0 := range o.Point {
-		p1 := p0 + o.Delta[index]
+	for index := range o.Point {
+		minPoint := o.Point[index]
+		maxPoint := minPoint + o.Delta[index]
 
-		for _, other := range others[1:] {
-			o.Point[index] = disc.Min(p0, other.Point[index])
-			p1 = disc.Max(p1, other.Point[index]+other.Delta[index])
+		for _, orth := range others[1:] {
+			currentMin := orth.Point[index]
+			currentMax := currentMin + orth.Delta[index]
+
+			minPoint = disc.Min(minPoint, currentMin)
+			maxPoint = disc.Max(maxPoint, currentMax)
 		}
-		o.Delta[index] = p1 - o.Point[index]
+		o.Point[index] = minPoint
+		o.Delta[index] = maxPoint - minPoint
 	}
 }
 
