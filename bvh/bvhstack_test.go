@@ -7,28 +7,28 @@ import (
 )
 
 func TestNext(t *testing.T) {
-	bvs := []*BVol[*Orthotope]{
+	bvs := []*BVol[*Orthotope[float32]]{
 		{
-			vol: &Orthotope{
-				Point: Coordinate{2, 2},
-				Delta: Coordinate{8, 8},
+			vol: &Orthotope[float32]{
+				Point: Coordinate[float32]{2, 2},
+				Delta: Coordinate[float32]{8, 8},
 			},
 		},
 		{
-			vol: &Orthotope{
-				Point: Coordinate{2, 2},
-				Delta: Coordinate{2, 2},
+			vol: &Orthotope[float32]{
+				Point: Coordinate[float32]{2, 2},
+				Delta: Coordinate[float32]{2, 2},
 			},
 		},
 		{
-			vol: &Orthotope{
-				Point: Coordinate{7, 7},
-				Delta: Coordinate{3, 3},
+			vol: &Orthotope[float32]{
+				Point: Coordinate[float32]{7, 7},
+				Delta: Coordinate[float32]{3, 3},
 			},
 		},
 	}
 
-	bvs[0].desc = [2]*BVol[*Orthotope]{bvs[1], bvs[2]}
+	bvs[0].desc = [2]*BVol[*Orthotope[float32]]{bvs[1], bvs[2]}
 	bvs[0].depth = 1
 
 	iter := bvs[0].Iterator()
@@ -43,17 +43,17 @@ func TestNext(t *testing.T) {
 
 func TestQuery(t *testing.T) {
 	tree := getIdealTree()
-	query := [5]*Orthotope{
-		{Point: Coordinate{11, 12}, Delta: Coordinate{0, 0}},
-		{Point: Coordinate{14, 15}, Delta: Coordinate{0, 0}},
-		{Point: Coordinate{-2, -2}, Delta: Coordinate{30, 30}},
-		{Point: Coordinate{30, 30}, Delta: Coordinate{30, 30}},
-		{Point: Coordinate{17, 9}, Delta: Coordinate{5, 5}},
+	query := [5]*Orthotope[float32]{
+		{Point: Coordinate[float32]{11, 12}, Delta: Coordinate[float32]{0, 0}},
+		{Point: Coordinate[float32]{14, 15}, Delta: Coordinate[float32]{0, 0}},
+		{Point: Coordinate[float32]{-2, -2}, Delta: Coordinate[float32]{30, 30}},
+		{Point: Coordinate[float32]{30, 30}, Delta: Coordinate[float32]{30, 30}},
+		{Point: Coordinate[float32]{17, 9}, Delta: Coordinate[float32]{5, 5}},
 	}
-	results := [5][]*Orthotope{
+	results := [5][]*Orthotope[float32]{
 		{leaf[4]},
 		{},
-		make([]*Orthotope, len(leaf)),
+		make([]*Orthotope[float32], len(leaf)),
 		{},
 		{leaf[3], leaf[5], leaf[6]},
 	}
@@ -81,7 +81,7 @@ func TestQuery(t *testing.T) {
 			t.Errorf("Querying %v did not return %v\n", q.String(), orth.String())
 		}
 	}
-	iter := (&BVol[*Orthotope]{}).Iterator()
+	iter := (&BVol[*Orthotope[float32]]{}).Iterator()
 	if iter.Query(leaf[0]) != nil {
 		t.Errorf("Querying an empty hierarchy returned non nil value!\n")
 	}
@@ -89,16 +89,16 @@ func TestQuery(t *testing.T) {
 
 func TestIntersects(t *testing.T) {
 	tree := getIdealTree()
-	query := [5]*Orthotope{
-		{Point: Coordinate{-2, 0}, Delta: Coordinate{4, 2}},
-		{Point: Coordinate{14, 11}, Delta: Coordinate{1, 1}},
-		{Point: Coordinate{7, 20}, Delta: Coordinate{2, 2}},
-		{Point: Coordinate{30, 30}, Delta: Coordinate{1, 1}},
-		{Point: Coordinate{0, 40}, Delta: Coordinate{1, 1}},
+	query := [5]*Orthotope[float32]{
+		{Point: Coordinate[float32]{-2, 0}, Delta: Coordinate[float32]{4, 2}},
+		{Point: Coordinate[float32]{14, 11}, Delta: Coordinate[float32]{1, 1}},
+		{Point: Coordinate[float32]{7, 20}, Delta: Coordinate[float32]{2, 2}},
+		{Point: Coordinate[float32]{30, 30}, Delta: Coordinate[float32]{1, 1}},
+		{Point: Coordinate[float32]{0, 40}, Delta: Coordinate[float32]{1, 1}},
 	}
-	delta := [5]*Coordinate{{14, 4}, {-4, 0}, {20, -25}, {-40, -40}, {50, -10}}
+	delta := [5]*Coordinate[float32]{{14, 4}, {-4, 0}, {20, -25}, {-40, -40}, {50, -10}}
 
-	results := [5][]*Orthotope{
+	results := [5][]*Orthotope[float32]{
 		{leaf[0], leaf[3]},
 		{leaf[4]},
 		{leaf[7], leaf[3], leaf[2], leaf[5]},
@@ -146,7 +146,7 @@ func TestIntersects(t *testing.T) {
 				q.String(), delta[in], orth.String())
 		}
 	}
-	iter := (&BVol[*Orthotope]{}).Iterator()
+	iter := (&BVol[*Orthotope[float32]]{}).Iterator()
 	if r, _ := iter.Intersects(leaf[0], delta[0]); r != nil {
 		t.Errorf("Intersection for an empty hierarchy returned non nil value!\n")
 	}
@@ -155,11 +155,11 @@ func TestIntersects(t *testing.T) {
 func TestBVHContains(t *testing.T) {
 	tree := getIdealTree()
 
-	toCheck := [4]*Orthotope{
+	toCheck := [4]*Orthotope[float32]{
 		leaf[2],
 		leaf[7],
-		{Point: Coordinate{100, 20}, Delta: Coordinate{8, 9}},
-		{Point: Coordinate{19, 2}, Delta: Coordinate{2, 2}}, // Similar to leaf[2]
+		{Point: Coordinate[float32]{100, 20}, Delta: Coordinate[float32]{8, 9}},
+		{Point: Coordinate[float32]{19, 2}, Delta: Coordinate[float32]{2, 2}}, // Similar to leaf[2]
 	}
 
 	contains := [4]bool{true, true, false, false}

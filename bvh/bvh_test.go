@@ -247,7 +247,7 @@ func TestSphereAdd(t *testing.T) {
 func TestSphereRemove(t *testing.T) {
 	s1 := &Sphere{Center: Coordinate{0, 0, 0}, Radius: 1}
 	s2 := &Sphere{Center: Coordinate{3, 0, 0}, Radius: 1}
-	bvh := TopDownBVH([]*Sphere{s1, s2})
+	bvh := TopDownBVH]([]*Sphere{s1, s2})
 
 	if !bvh.Remove(s1) {
 		t.Fatal("Failed to remove s1")

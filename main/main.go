@@ -5,16 +5,19 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	bvh "github.com/briannoyama/bvh/bvh"
+	"github.com/briannoyama/bvh/math32"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"os"
 	"time"
-
-	"github.com/briannoyama/bvh/rect"
 )
 
+type Number = math32.Number
+
 func main() {
+
 	config := flag.String("config", "test.json",
 		"JSON configuration for the test.")
 	compare := flag.Bool("compare", false,
@@ -29,7 +32,7 @@ func main() {
 
 	configBytes, _ := ioutil.ReadAll(configFile)
 
-	test := &bvhTest{}
+	test := &bvhTest[float32]{}
 	json.Unmarshal([]byte(configBytes), test)
 	if *compare {
 		test.comparisonTest()
@@ -38,42 +41,42 @@ func main() {
 	}
 }
 
-type operation struct {
-	orth   *rect.Orthotope
+type operation[T math32.Number] struct {
+	orth   *math32.Orthotope[T]
 	opcode int
 }
 
-type bvhTest struct {
-	MaxBounds *rect.Orthotope
-	MinVol    *[rect.DIMENSIONS]int
-	MaxVol    *[rect.DIMENSIONS]int
+type bvhTest[T math32.Number] struct {
+	MaxBounds *math32.Orthotope[T]
+	MinVol    *[math32.DIMENSIONS]T
+	MaxVol    *[math32.DIMENSIONS]T
 	Additions int
 	Removals  int
 	Queries   int
 	RandSeed  int64
 }
 
-func (b *bvhTest) comparisonTest() {
-	orths := make([]*rect.Orthotope, 0, b.Additions)
+func (b *bvhTest[T]) comparisonTest() {
+	orths := make([]*math32.Orthotope[T], 0, b.Additions)
 	r := rand.New(rand.NewSource(b.RandSeed))
-	bvol := &rect.BVol{}
+	bvol := &bvh.BVol[*math32.Orthotope]{}
 	iter := bvol.Iterator()
 	for a := 0; a < b.Additions; a += 1 {
 		orth := b.makeOrth(r)
 		orths = append(orths, orth)
 
 		iter.Add(orth)
-		bvol2 := rect.TopDownBVH(orths)
+		bvol2 := bvh.TopDownBVH(orths)
 
 		fmt.Printf("%d, %d, %d, %d, %d\n", a, bvol.GetDepth(), iter.Score(),
 			bvol2.GetDepth(), bvol2.Score())
 	}
 }
 
-func (b *bvhTest) runTest() {
-	orths := make([]*rect.Orthotope, 0, b.Additions)
+func (b *bvhTest[T]) runTest() {
+	orths := make([]*math32.Orthotope[T], 0, b.Additions)
 	removed := make(map[int]bool, b.Additions)
-	bvol := &rect.BVol{}
+	bvol := &bvh.BVol[*math32.Orthotope[T]]{}
 	iter := bvol.Iterator()
 	r := rand.New(rand.NewSource(b.RandSeed))
 
@@ -140,12 +143,29 @@ func distribute(r *rand.Rand, totalEvents int, steps int) *[]int {
 	return &events
 }
 
-func (b *bvhTest) makeOrth(r *rand.Rand) *rect.Orthotope {
-	orth := &rect.Orthotope{}
-	for d := 0; d < rect.DIMENSIONS; d += 1 {
-		orth.Delta[d] = int32(b.MinVol[d] + r.Intn(b.MaxVol[d]-b.MinVol[d]))
-		orth.Point[d] = b.MaxBounds.Point[d] + r.Int31n(b.MaxBounds.Delta[d]-
-			orth.Delta[d])
+func (b *bvhTest[T]) makeOrth(r *rand.Rand) *math32.Orthotope[T] {
+	orth := &math32.Orthotope[T]{}
+	for d := 0; d < math32.DIMENSIONS; d++ {
+		orth.Delta[d] = randomValue[T](r, b.MinVol[d], b.MaxVol[d])
+		maxPos := b.MaxBounds.Point[d] + b.MaxBounds.Delta[d]
+		minPos := b.MaxBounds.Point[d]
+		orth.Point[d] = randomValue[T](r, minPos, maxPos-orth.Delta[d])
 	}
 	return orth
+}
+
+func randomValue[T math32.Number](r *rand.Rand, min, max T) T {
+	var zero T
+	switch any(zero).(type) {
+	case int32:
+		return min + T(r.Int31n(int32(max-min)))
+	case int64:
+		return min + T(r.Int63n(int64(max-min)))
+	case float32:
+		return min + T(r.Float32()*float32(max-min))
+	case float64:
+		return min + T(r.Float64()*float64(max-min))
+	default:
+		panic("unsupported number type")
+	}
 }

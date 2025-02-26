@@ -106,7 +106,7 @@ func (s *orthStack[T]) queryNext(o T) *BVol[T] {
 }
 
 // Duplicate of queryNext using "Instersects" instead for higher performance.
-func (s *orthStack[T]) intersectsNext(orth T, delta *Coordinate) (*BVol[T], float32) {
+func (s *orthStack[T]) intersectsNext(orth T, delta *Coordinate[float32]) (*BVol[T], float32) {
 	bvol, index := s.peek()
 	distance := float32(-1)
 	for bvol.depth > 0 {
@@ -149,7 +149,7 @@ func (s *orthStack[T]) Query(o T) T {
 
 // Intersects traces the path of a moving orth through the BVH returning an orth and the distance from the
 // source orth's origin along it's delta. It does not guarantee order.
-func (s *orthStack[T]) Intersects(orth T, delta *math32.Coordinate) (T, float32) {
+func (s *orthStack[T]) Intersects(orth T, delta *math32.Coordinate[float32]) (T, float32) {
 	var zero T
 	if !s.HasNext() {
 		return zero, -1
@@ -192,6 +192,7 @@ func (s *orthStack[T]) path(o T) *BVol[T] {
 }
 
 // Contains returns true iff the orthotope is stored within the BVH.
+// Contains returns true iff the exact orthotope instance is stored within the BVH
 // Contains returns true iff the exact orthotope instance is stored within the BVH
 func (s *orthStack[T]) Contains(o T) bool {
 	s.Reset()

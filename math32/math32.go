@@ -72,3 +72,25 @@ func Int32Abs(i int32) int32 {
 func Int32Sign(i int32) int32 {
 	return (i >> SHIFT) & 1
 }
+
+func Max[T Number](a, b T) T {
+	if a > b {
+		return a
+	}
+
+	return b
+}
+
+func Min[T Number](a, b T) T {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func Abs[T Number](a T) T {
+	if a < 0 {
+		return -a
+	}
+	return a
+}
