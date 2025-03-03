@@ -12,7 +12,7 @@ import (
 const DIMENSIONS int = 3
 
 type Number interface {
-	constraints.Integer | constraints.Float
+	~float32 | ~float64 | ~int32 | ~int64
 }
 
 // IntCoordinate contains integers. Everything uses 32 bit variables to simplify bit shifting, memory management, etc

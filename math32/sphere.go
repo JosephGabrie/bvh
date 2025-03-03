@@ -17,11 +17,21 @@ func (s *Sphere[T]) GetCenter() Coordinate[T] {
 func (s *Sphere[T]) GetRadius() T {
 	return s.Radius
 }
-func (s *Sphere[T]) Contains(other *Sphere[T]) bool {
-	dist := Distance(s.Center, other.Center)
-	return dist+other.Radius <= s.Radius
+func (s *Sphere[T]) Contains(other VolumeType[T]) bool {
+	otherSphere, ok := other.(*Sphere[T])
+	if !ok {
+		return false
+	}
+	dist := Distance(s.Center, otherSphere.Center)
+	return dist+otherSphere.Radius <= s.Radius
 }
-func (s *Sphere[T]) MinBounds(spheres ...*Sphere[T]) {
+func (s *Sphere[T]) MinBounds(volumes ...VolumeType[T]) {
+	var spheres []*Sphere[T]
+	for _, v := range volumes {
+		if sphere, ok := v.(*Sphere[T]); ok {
+			spheres = append(spheres, sphere)
+		}
+	}
 	if len(spheres) == 0 {
 		return
 	}
@@ -46,26 +56,42 @@ func (s *Sphere[T]) Score() T {
 	return s.Radius * 2
 }
 
-func (s *Sphere[T]) Equals(other *Sphere[T]) bool {
-	return s.Center.Equals(other.Center) && s.Radius == other.Radius
+func (s *Sphere[T]) Equals(other VolumeType[T]) bool {
+	otherSphere, ok := other.(*Sphere[T])
+	if !ok {
+		return false
+	}
+	return s.Center.Equals(otherSphere.Center) && s.Radius == otherSphere.Radius
 }
 func (s *Sphere[T]) IsNil() bool {
 	return s == nil
 }
 
-func (s *Sphere[T]) IsSame(other *Sphere[T]) bool {
-	return s == other
+func (s *Sphere[T]) IsSame(other VolumeType[T]) bool {
+	if other == nil || other.IsNil() {
+		return s == nil
+	}
+	otherSphere, ok := other.(*Sphere[T])
+	return ok && s == otherSphere
 }
-func (s *Sphere[T]) Overlaps(other *Sphere[T]) bool {
-	distSq := s.Center.DistanceSq(other.Center)
-	sum := s.Radius + other.Radius
+func (s *Sphere[T]) Overlaps(other VolumeType[T]) bool {
+	otherSphere, ok := other.(*Sphere[T])
+	if !ok {
+		return false // Cannot overlap non-sphere volumes
+	}
+	distSq := s.Center.DistanceSq(otherSphere.Center)
+	sum := s.Radius + otherSphere.Radius
 	return distSq <= sum*sum
 }
 
-func (s *Sphere[T]) Intersects(other *Sphere[T], delta *Coordinate[T]) T {
+func (s *Sphere[T]) Intersects(other VolumeType[T], delta *Coordinate[T]) T {
+	otherSphere, ok := other.(*Sphere[T])
+	if !ok {
+		return 2.0
+	}
 	// Simplified ray-sphere intersection (delta movement)
-	combinedRadius := s.Radius + other.Radius
-	rayOrigin := other.Center
+	combinedRadius := s.Radius + otherSphere.Radius
+	rayOrigin := otherSphere.Center
 	rayDir := *delta
 	oc := rayOrigin.Sub(s.Center)
 	a := rayDir.Dot(rayDir)
@@ -112,7 +138,7 @@ func (s *Sphere[T]) String() string {
 	return fmt.Sprintf("Center %v, Radius %v", s.Center, s.Radius)
 }
 
-func (s *Sphere[T]) New() *Sphere[T] {
+func (s *Sphere[T]) New() VolumeType[T] {
 	return &Sphere[T]{}
 }
 

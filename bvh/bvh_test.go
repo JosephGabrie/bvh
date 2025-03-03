@@ -132,10 +132,10 @@ func getIdealTree() *BVol[*math32.Orthotope[float32], float32] {
 		vol: &math32.Orthotope[float32]{Point: Coordinate[float32]{2, 2}, Delta: Coordinate[float32]{21, 23}},
 		desc: [2]*BVol[*math32.Orthotope[float32], float32]{
 			{depth: 3,
-				vol: &math32.Orthotope{Point: Coordinate[float32]{16, 2}, Delta: Coordinate[float32]{7, 23}},
+				vol: &math32.Orthotope[float32]{Point: Coordinate[float32]{16, 2}, Delta: Coordinate[float32]{7, 23}},
 				desc: [2]*BVol[*math32.Orthotope[float32], float32]{
 					{depth: 1,
-						vol: &math32.Orthotope{Point: Coordinate[float32]{18, 19}, Delta: Coordinate[float32]{5, 6}},
+						vol: &math32.Orthotope[float32]{Point: Coordinate[float32]{18, 19}, Delta: Coordinate[float32]{5, 6}},
 						desc: [2]*BVol[*math32.Orthotope[float32], float32]{
 							{vol: leaf[8]},
 							{vol: leaf[9]},
@@ -145,7 +145,7 @@ func getIdealTree() *BVol[*math32.Orthotope[float32], float32] {
 						vol: &math32.Orthotope[float32]{Point: Coordinate[float32]{16, 2}, Delta: Coordinate[float32]{6, 12}},
 						desc: [2]*BVol[*math32.Orthotope[float32], float32]{
 							{depth: 1,
-								vol: &math32.Orthotope{Point: Coordinate[float32]{16, 2}, Delta: Coordinate[float32]{5, 8}},
+								vol: &math32.Orthotope[float32]{Point: Coordinate[float32]{16, 2}, Delta: Coordinate[float32]{5, 8}},
 								desc: [2]*BVol[*math32.Orthotope[float32], float32]{
 									{vol: leaf[2]},
 									{vol: leaf[3]},
@@ -248,13 +248,16 @@ func TestSphereAdd(t *testing.T) {
 func TestSphereRemove(t *testing.T) {
 	s1 := &math32.Sphere[float32]{Center: math32.Coordinate[float32]{0, 0, 0}, Radius: 1}
 	s2 := &math32.Sphere[float32]{Center: math32.Coordinate[float32]{3, 0, 0}, Radius: 1}
-	bvh := TopDownBVH[*math32.Sphere[float32], float32](VolumeType[float32]{s1, s2})
+
+	spheres := []*math32.Sphere[float32]{s1, s2}
+
+	bvh := TopDownBVH(spheres)
 
 	if !bvh.Remove(s1) {
 		t.Fatal("Failed to remove s1")
 	}
 
-	root := bvh.vol.(*math32.Sphere[float32])
+	root := bvh.vol
 	if root.Radius != 1 || !root.Center.Equals(s2.Center) {
 		t.Error("BVH incorrect after removal")
 	}

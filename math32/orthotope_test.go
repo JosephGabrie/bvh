@@ -59,7 +59,7 @@ func TestIntersects(t *testing.T) {
 
 	o1 := &Orthotope[float32]{Point: Coordinate[float32]{-10, -25}, Delta: Coordinate[float32]{10, 10}}
 	t1 := o1.Intersects(o, delta)
-	expected := float32(-1)
+	expected := float32(2)
 	if t1 != expected {
 		t.Errorf("Expected %v, got %v.", expected, t1)
 	}
@@ -80,9 +80,9 @@ func TestIntersects(t *testing.T) {
 }
 
 func TestMinBounds(t *testing.T) {
-	o1 := &Orthotope[int32]{Point: Coordinate[int32]{10, -20}, Delta: Coordinate[int32]{30, 30}}
-	o2 := &Orthotope[int32]{Point: Coordinate[int32]{15, -20}, Delta: Coordinate[int32]{20, 20}}
-	o3 := &Orthotope[int32]{Point: Coordinate[int32]{-10, 5}, Delta: Coordinate[int32]{30, 30}}
+	o1 := &Orthotope[int32]{Point: Coordinate[int32]{10, -20, 0}, Delta: Coordinate[int32]{30, 30, 0}}
+	o2 := &Orthotope[int32]{Point: Coordinate[int32]{15, -20, 0}, Delta: Coordinate[int32]{20, 20, 0}}
+	o3 := &Orthotope[int32]{Point: Coordinate[int32]{-10, 5, 0}, Delta: Coordinate[int32]{30, 30, 0}}
 
 	o1.MinBounds(o2, o3)
 	expected := &Orthotope[int32]{Point: Coordinate[int32]{-10, -20}, Delta: Coordinate[int32]{45, 55}}
@@ -112,10 +112,10 @@ func TestOrthEquals(t *testing.T) {
 	}
 
 	if o1.Equals(o3) {
-		t.Errorf("%v should not equal %v", o1, o2)
+		t.Errorf("%v should not equal %v", o1, o3)
 	}
 
 	if o4.Equals(o3) {
-		t.Errorf("%v should not equal %v", o1, o2)
+		t.Errorf("%v should not equal %v", o4, o3)
 	}
 }

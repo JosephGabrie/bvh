@@ -5,19 +5,19 @@ import (
 )
 
 // OrthStack gives methods for working with BVol (implemented by orthStack)
-type OrthStack[T VolumeType[E], E math32.Number] interface {
+type OrthStack[T math32.VolumeType[E], E math32.Number] interface {
 	Reset()
 	HasNext() bool
 	Next() *BVol[T, E]
-	Trace(o VolumeType[E]) (VolumeType[E], int32)
-	Query(o VolumeType[E]) VolumeType[E]
-	Add(orth VolumeType[E]) bool
-	Contains(orth VolumeType[E]) bool
-	Remove(o VolumeType[E]) bool
+	Trace(o math32.VolumeType[E]) (math32.VolumeType[E], int32)
+	Query(o math32.VolumeType[E]) math32.VolumeType[E]
+	Add(orth math32.VolumeType[E]) bool
+	Contains(orth math32.VolumeType[E]) bool
+	Remove(o math32.VolumeType[E]) bool
 }
 
 // orthStack provides memory efficient stack based methods for manipulating BVHs.
-type orthStack[T VolumeType[E], E math32.Number] struct {
+type orthStack[T math32.VolumeType[E], E math32.Number] struct {
 	bvh      *BVol[T, E]
 	bvStack  []*BVol[T, E]
 	intStack []int32
@@ -105,9 +105,9 @@ func (s *orthStack[T, E]) queryNext(o T) *BVol[T, E] {
 }
 
 // Duplicate of queryNext using "Instersects" instead for higher performance.
-func (s *orthStack[T, E]) intersectsNext(orth T, delta *math32.Coordinate[E]) (*BVol[T, E], float32) {
+func (s *orthStack[T, E]) intersectsNext(orth T, delta *math32.Coordinate[E]) (*BVol[T, E], E) {
 	bvol, index := s.peek()
-	distance := float32(-1)
+	var distance E = -1
 	for bvol.depth > 0 {
 		if index >= 2 {
 			if !s.traceUp() {
@@ -148,14 +148,15 @@ func (s *orthStack[T, E]) Query(o T) T {
 
 // Intersects traces the path of a moving orth through the BVH returning an orth and the distance from the
 // source orth's origin along it's delta. It does not guarantee order.
-func (s *orthStack[T, E]) Intersects(orth T, delta *math32.Coordinate[E]) (T, float32) {
+func (s *orthStack[T, E]) Intersects(orth T, delta *math32.Coordinate[E]) (T, E) {
 	var zero T
+	var zeroE E
 	if !s.HasNext() {
-		return zero, -1
+		return zero, zeroE - 1 // Handle according to E's type
 	}
 	bvol, distance := s.intersectsNext(orth, delta)
 	if !s.HasNext() {
-		return zero, -1
+		return zero, zeroE - 1
 	}
 
 	// Use trace up to get the next possible branch.
@@ -236,7 +237,7 @@ func (s *orthStack[T, E]) Add(orth T) bool {
 			lowIndex = int32(0)
 		} else {
 			// We cannot add the orth here. Descend.
-			smallestScore := math32.MAXVAL
+			smallestScore := math32.MaxValue[E]()
 			for index := range next.desc {
 				temp := next.desc[index].vol.New().(T)
 				temp.MinBounds(orth, next.desc[index].vol)
@@ -287,9 +288,9 @@ func (s *orthStack[T, E]) Remove(o T) bool {
 }
 
 // Score returns the total score of all children by adding scores of volumes (sum of length of edges) for each volume.
-func (s *orthStack[T, E]) Score() float32 {
+func (s *orthStack[T, E]) Score() E {
 	s.Reset()
-	var score float32
+	var score E
 
 	for s.HasNext() {
 		score += s.Next().vol.Score()

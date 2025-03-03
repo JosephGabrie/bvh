@@ -7,7 +7,6 @@ import (
 	"image/png"
 	"os"
 	"sort"
-	//"sort"
 	"strings"
 )
 
@@ -93,7 +92,7 @@ func TopDownBVH[T math32.VolumeType[E], E math32.Number](orths []T) *BVol[T, E] 
 		comp1.MinBounds(interfaceSlice[:mid]...)
 		comp2.MinBounds(interfaceSlice[mid:]...)
 
-		score := comp1.Score() + comp2.Score()
+		score := float32(comp1.Score() + comp2.Score())
 		if score < lowScore {
 			lowScore = score
 			lowDim = d
@@ -144,7 +143,7 @@ func (b *BVol[T, E]) Remove(orth T) bool {
 }
 
 // Score recursively totals the x,y,z,... etc. edges of all volumes in the BVH.
-func (b *BVol[T, E]) Score() float32 {
+func (b *BVol[T, E]) Score() E {
 	s := b.Iterator()
 	return s.Score()
 }

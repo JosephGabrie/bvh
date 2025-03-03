@@ -23,15 +23,17 @@ func (o *Orthotope[T]) GetDelta() Coordinate[T] {
 	return o.Delta
 }
 
-func (o *Orthotope[T]) New() *Orthotope[T] {
+func (o *Orthotope[T]) New() VolumeType[T] {
 	return &Orthotope[T]{}
 }
 
 // Overlaps returns true if two orthotopes intersect
-func (o *Orthotope[T]) Overlaps(orth *Orthotope[T]) bool {
+func (o *Orthotope[T]) Overlaps(other VolumeType[T]) bool {
 	intersects := true
-	for index, p0 := range orth.Point {
-		p1 := orth.Delta[index] + p0
+	otherPoint := other.GetPoint()
+	otherDelta := other.GetDelta()
+	for index, p0 := range otherPoint {
+		p1 := otherDelta[index] + p0
 		intersects = intersects && o.Point[index] <= p1 &&
 			p0 <= o.Point[index]+o.Delta[index]
 	}
@@ -41,12 +43,14 @@ func (o *Orthotope[T]) Overlaps(orth *Orthotope[T]) bool {
 // In math32/orthotope.go
 
 // Contains returns true if all of orth is within the bounds of o. Ie. the intersection is equivalent to orth
-func (o *Orthotope[T]) Contains(orth *Orthotope[T]) bool {
+func (o *Orthotope[T]) Contains(other VolumeType[T]) bool {
 	contains := true
+	otherPoint := other.GetPoint()
+	otherDelta := other.GetDelta()
 	for index, p0 := range o.Point {
 		p1 := o.Delta[index] + p0
-		contains = contains && orth.Point[index] >= p0 &&
-			p1 >= (orth.Point[index]+orth.Delta[index])
+		contains = contains && otherPoint[index] >= p0 &&
+			p1 >= (otherPoint[index]+otherDelta[index])
 	}
 	return contains
 }
@@ -65,13 +69,15 @@ func (o *Orthotope[T]) TaxiPath(point Coordinate[T]) Coordinate[T] {
 }
 
 // Intersects return 0 <= t <= 1 for where the orth intersects along the delta, else t = 2 when there's no intersection
-func (o *Orthotope[T]) Intersects(orth *Orthotope[T], delta *Coordinate[T]) T {
+func (o *Orthotope[T]) Intersects(other VolumeType[T], delta *Coordinate[T]) T {
+	otherPoint := other.GetPoint()
+	otherDelta := other.GetDelta()
+
 	var inT T = 0
 	var outT T = 1
 
-	var negativeOne = -1
-	for index, p0 := range orth.Point {
-		p1 := orth.Delta[index] + p0
+	for index, p0 := range otherPoint {
+		p1 := otherDelta[index] + p0
 
 		if delta[index] == 0 {
 			if o.Point[index] > p1 || p0 > o.Point[index]+o.Delta[index] {
@@ -89,20 +95,20 @@ func (o *Orthotope[T]) Intersects(orth *Orthotope[T], delta *Coordinate[T]) T {
 			outT = Min(outT, p1T)
 
 			if inT > outT {
-				return T(negativeOne) // supposed to be 2 but just leaving it for testing
+				return T(2) // supposed to be 2 but just leaving it for testing
 			}
 		}
 	}
 
 	if inT < 0 {
-		return T(negativeOne)
+		return T(2)
 	}
 	return inT
 }
 
 // Slide modifies delta by sliding the orth in the order prescribed such that it does overlap any of the orths within
 // the margin
-func (o *Orthotope[T]) Slide(delta *Coordinate[T], order [DIMENSIONS]int, margin T, orths ...*Orthotope[T]) {
+func (o *Orthotope[T]) Slide(delta *Coordinate[T], order [DIMENSIONS]int, margin T, orths ...VolumeType[T]) {
 	qOrth := *o
 	for _, dim := range order {
 		// Test one dimension at a time in the order provided
@@ -134,18 +140,34 @@ func (o *Orthotope[T]) Slide(delta *Coordinate[T], order [DIMENSIONS]int, margin
 
 // MinBounds modifies point and delta such to that the resulting orthotope is the smallest one that can possibly contain
 // all others
-func (o *Orthotope[T]) MinBounds(others ...*Orthotope[T]) {
-	o.Point = others[0].Point
-	o.Delta = others[0].Delta
+func (o *Orthotope[T]) MinBounds(others ...VolumeType[T]) {
 
-	for index, p0 := range o.Point {
-		p1 := p0 + o.Delta[index]
+	if len(others) == 0 {
+		return
+	}
+
+	first := others[0]
+	o.Point = first.GetPoint()
+	o.Delta = first.GetDelta()
+
+	for i := 0; i < DIMENSIONS; i++ {
+		min := o.Point[i]
+		max := min + o.Delta[i]
 
 		for _, other := range others[1:] {
-			o.Point[index] = Min(p0, other.Point[index])
-			p1 = Max(p1, other.Point[index]+other.Delta[index])
+			pt := other.GetPoint()[i]
+			delta := other.GetDelta()[i]
+			otherMax := pt + delta
+			if pt < min {
+				min = pt
+			}
+			if otherMax > max {
+				max = otherMax
+			}
 		}
-		o.Delta[index] = p1 - o.Point[index]
+		o.Point[i] = min
+		o.Delta[i] = max - min
+
 	}
 }
 
@@ -160,18 +182,30 @@ func (o *Orthotope[T]) Score() T {
 func (o *Orthotope[T]) IsNil() bool {
 	return o == nil
 }
-func (o *Orthotope[T]) IsSame(other *Orthotope[T]) bool {
-	return o == other
+func (o *Orthotope[T]) IsSame(other VolumeType[T]) bool {
+	if other == nil || other.IsNil() {
+		return o == nil
+	}
+	otherOrth, ok := other.(*Orthotope[T])
+	if !ok {
+		return false
+	}
+	return o == otherOrth
 }
 
 // Equals checks if two Orthotopes are equivalent (but not necessarily the same in memory)
-func (o *Orthotope[T]) Equals(other *Orthotope[T]) bool {
-	if o == nil || other == nil {
-		return o == other
+// In math32/orthotope.go
+// Equals checks if two VolumeType objects are equivalent.
+func (o *Orthotope[T]) Equals(other VolumeType[T]) bool {
+	if other == nil || other.IsNil() {
+		return o == nil
 	}
-
+	otherOrth, ok := other.(*Orthotope[T])
+	if !ok {
+		return false
+	}
 	for i := range o.Point {
-		if o.Point[i] != other.Point[i] || o.Delta[i] != other.Delta[i] {
+		if o.Point[i] != otherOrth.Point[i] || o.Delta[i] != otherOrth.Delta[i] {
 			return false
 		}
 	}

@@ -5,6 +5,41 @@ import "math"
 // SHIFT represents the number of bits in a 32 bit int minus 1
 const SHIFT uint = 31
 
+func MaxValue[T Number]() T {
+	var t T
+	var maxFloat32 = math.MaxFloat32
+	var maxFloat64 = math.MaxFloat64
+	var maxInt64 = math.MaxInt64
+	switch any(t).(type) {
+	case float32:
+		return T(maxFloat32) // ✅ Float32 max
+	case float64:
+		return T(maxFloat64) // ✅ Float64 max
+	case int32:
+		return T(math.MaxInt32) // ✅ Int32 max (converts int → int32)
+	case int64:
+		return T(maxInt64) // ✅ Int64 max (converts int → int64)
+	default:
+		panic("unsupported type")
+	}
+}
+
+func NegativeOne[T Number]() T {
+	var t T
+	switch any(t).(type) {
+	case float32:
+		return T(-1.0) // ✅ -1.0 for float32
+	case float64:
+		return T(-1.0) // ✅ -1.0 for float64
+	case int32:
+		return T(-1) // ✅ -1 for int32
+	case int64:
+		return T(-1) // ✅ -1 for int64
+	default:
+		panic("unsupported type")
+	}
+}
+
 // Float32Max use for efficient branchless calculations
 func Float32Max(x, y float32) float32 {
 	i := math.Float32bits(x)

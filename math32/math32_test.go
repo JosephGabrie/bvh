@@ -1,9 +1,48 @@
 package math32
 
 import (
+	"math"
 	"testing"
 )
 
+func TestMaxValue(t *testing.T) {
+	// Test float32
+	t.Run("float32", func(t *testing.T) {
+		expected := float32(math.MaxFloat32)
+		actual := MaxValue[float32]()
+		if actual != expected {
+			t.Errorf("Expected %v, got %v", expected, actual)
+		}
+	})
+
+	// Test float64
+	t.Run("float64", func(t *testing.T) {
+		expected := math.MaxFloat64
+		actual := MaxValue[float64]()
+		if actual != expected {
+			t.Errorf("Expected %v, got %v", expected, actual)
+		}
+	})
+
+	// Test int32
+	t.Run("int32", func(t *testing.T) {
+		expected := int32(math.MaxInt32)
+		actual := MaxValue[int32]()
+		if actual != expected {
+			t.Errorf("Expected %v, got %v", expected, actual)
+		}
+	})
+
+	// Test int64
+	t.Run("int64", func(t *testing.T) {
+		expected := int64(math.MaxInt64)
+		actual := MaxValue[int64]()
+		if actual != expected {
+			t.Errorf("Expected %v, got %v", expected, actual)
+		}
+	})
+
+}
 func TestFloat32Min(t *testing.T) {
 	expected := float32(-5)
 	actual := Float32Min(expected, 10)
