@@ -3,11 +3,12 @@ package collision
 import (
 	"testing"
 
+	"github.com/briannoyama/bvh/math32"
 	. "github.com/briannoyama/bvh/math32"
 )
 
 func TestNext(t *testing.T) {
-	bvs := []*BVol[*Orthotope[float32]]{
+	bvs := []*BVol[*math32.Orthotope[float32], float32]{
 		{
 			vol: &Orthotope[float32]{
 				Point: Coordinate[float32]{2, 2},
@@ -27,8 +28,7 @@ func TestNext(t *testing.T) {
 			},
 		},
 	}
-
-	bvs[0].desc = [2]*BVol[*Orthotope[float32]]{bvs[1], bvs[2]}
+	bvs[0].desc = [2]*BVol[*math32.Orthotope[float32], float32]{bvs[1], bvs[2]}
 	bvs[0].depth = 1
 
 	iter := bvs[0].Iterator()
@@ -81,7 +81,7 @@ func TestQuery(t *testing.T) {
 			t.Errorf("Querying %v did not return %v\n", q.String(), orth.String())
 		}
 	}
-	iter := (&BVol[*Orthotope[float32]]{}).Iterator()
+	iter := (&BVol[*math32.Orthotope[float32], float32]{}).Iterator()
 	if iter.Query(leaf[0]) != nil {
 		t.Errorf("Querying an empty hierarchy returned non nil value!\n")
 	}
@@ -146,7 +146,7 @@ func TestIntersects(t *testing.T) {
 				q.String(), delta[in], orth.String())
 		}
 	}
-	iter := (&BVol[*Orthotope[float32]]{}).Iterator()
+	iter := (&BVol[*math32.Orthotope[float32], float32]{}).Iterator()
 	if r, _ := iter.Intersects(leaf[0], delta[0]); r != nil {
 		t.Errorf("Intersection for an empty hierarchy returned non nil value!\n")
 	}

@@ -59,7 +59,7 @@ type bvhTest[T math32.Number] struct {
 func (b *bvhTest[T]) comparisonTest() {
 	orths := make([]*math32.Orthotope[T], 0, b.Additions)
 	r := rand.New(rand.NewSource(b.RandSeed))
-	bvol := &bvh.BVol[*math32.Orthotope]{}
+	bvol := &bvh.BVol[*math32.Orthotope[T], T]{}
 	iter := bvol.Iterator()
 	for a := 0; a < b.Additions; a += 1 {
 		orth := b.makeOrth(r)
@@ -76,7 +76,7 @@ func (b *bvhTest[T]) comparisonTest() {
 func (b *bvhTest[T]) runTest() {
 	orths := make([]*math32.Orthotope[T], 0, b.Additions)
 	removed := make(map[int]bool, b.Additions)
-	bvol := &bvh.BVol[*math32.Orthotope[T]]{}
+	bvol := &bvh.BVol[*math32.Orthotope[T], T]{}
 	iter := bvol.Iterator()
 	r := rand.New(rand.NewSource(b.RandSeed))
 

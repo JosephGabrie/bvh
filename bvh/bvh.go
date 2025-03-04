@@ -65,7 +65,63 @@ func (d byDimension[T, E]) Less(i, j int) bool {
 	*/
 }
 
+/*
 // TopDownBVH creates a balanced BVH by recursively halving, sorting and comparing vols.
+
+	func TopDownBVH[T math32.VolumeType[E], E math32.Number](orths []T) *BVol[T, E] {
+		if len(orths) == 1 {
+			return &BVol[T, E]{vol: orths[0]}
+		}
+
+		comp1 := orths[0].New().(T)
+		comp2 := orths[0].New().(T)
+		mid := len(orths) / 2
+
+		// Convert to interface slice for sorting
+		interfaceSlice := make([]math32.VolumeType[E], len(orths))
+		for i, v := range orths {
+			interfaceSlice[i] = v
+		}
+
+		lowDim := 0
+		lowScore := math32.MAXVAL
+
+		// Find best dimension to split
+		for d := 0; d < math32.DIMENSIONS; d++ {
+			sort.Sort(byDimension[T, E]{volumes: interfaceSlice, dimension: d})
+
+			// Pass interface slice directly to MinBounds
+			comp1.MinBounds(interfaceSlice[:mid]...)
+			comp2.MinBounds(interfaceSlice[mid:]...)
+
+			score := float32(comp1.Score() + comp2.Score())
+			if score < lowScore {
+				lowScore = score
+				lowDim = d
+			}
+		}
+
+		// Final sort with best dimension
+		sort.Sort(byDimension[T, E]{volumes: interfaceSlice, dimension: lowDim})
+
+		// Create sorted concrete slice for recursion
+		sortedOrths := make([]T, len(interfaceSlice))
+		for i, v := range interfaceSlice {
+			sortedOrths[i] = v.(T)
+		}
+
+		rootVol := orths[0].New().(T)
+		rootVol.MinBounds(comp1, comp2)
+
+		return &BVol[T, E]{
+			vol: comp1,
+			desc: [2]*BVol[T, E]{
+				TopDownBVH(sortedOrths[:mid]),
+				TopDownBVH(sortedOrths[mid:]),
+			},
+		}
+	}
+*/
 func TopDownBVH[T math32.VolumeType[E], E math32.Number](orths []T) *BVol[T, E] {
 	if len(orths) == 1 {
 		return &BVol[T, E]{vol: orths[0]}

@@ -258,33 +258,41 @@ func (s *orthStack[T, E]) Add(orth T) bool {
 }
 
 // Remove an orth from the BVH associated with this stack.
+
 func (s *orthStack[T, E]) Remove(o T) bool {
-	var zero T
 	s.Reset()
 	bvol := s.path(o)
-	if bvol.vol.Equals(o) {
-		s.pop()
+	if bvol == nil || !bvol.vol.Equals(o) {
+		return false
+	}
+
+	s.pop()
+	if s.HasNext() {
+		parent, pIndex := s.pop()
 		if s.HasNext() {
-			parent, pIndex := s.pop()
-			if s.HasNext() {
-				gParent, gIndex := s.peek()
-				// Delete the node by replacing the parent.
+			gParent, gIndex := s.peek()
+			if gIndex < 2 && gParent != nil {
 				gParent.desc[gIndex] = parent.desc[pIndex^1]
 				s.rebalanceRemove()
-			} else {
-				// Delete the node by replacing the volume and children with cousin.
-				cousin := parent.desc[pIndex^1]
+			}
+		} else if parent != nil {
+			cousin := parent.desc[pIndex^1]
+			if cousin != nil {
 				parent.vol = cousin.vol
 				parent.desc = cousin.desc
 				parent.depth = cousin.depth
+			} else {
+				parent.vol = *new(T)
+				parent.desc = [2]*BVol[T, E]{}
+				parent.depth = 0
 			}
-		} else {
-			// For depths of 0, delete by removing the volume.
-			bvol.vol = zero
 		}
-		return true
+	} else if bvol != nil {
+		bvol.vol = *new(T)
+		bvol.desc = [2]*BVol[T, E]{}
+		bvol.depth = 0
 	}
-	return false
+	return true
 }
 
 // Score returns the total score of all children by adding scores of volumes (sum of length of edges) for each volume.

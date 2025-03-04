@@ -195,10 +195,13 @@ func (o *Orthotope[T]) IsSame(other VolumeType[T]) bool {
 
 // Equals checks if two Orthotopes are equivalent (but not necessarily the same in memory)
 // In math32/orthotope.go
-// Equals checks if two VolumeType objects are equivalent.
+// Equals checks if two VolumeType objects are equivalent
 func (o *Orthotope[T]) Equals(other VolumeType[T]) bool {
+	if o == nil {
+		return other == nil || (other != nil && other.IsNil())
+	}
 	if other == nil || other.IsNil() {
-		return o == nil
+		return false
 	}
 	otherOrth, ok := other.(*Orthotope[T])
 	if !ok {

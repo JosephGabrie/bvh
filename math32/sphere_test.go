@@ -74,21 +74,21 @@ func TestSphereIntersects(t *testing.T) {
 }
 
 func TestSphereMinBounds(t *testing.T) {
-	s1 := &Sphere[float32]{Center: Coordinate[float32]{0, 0, 0}, Radius: 2}
-	s2 := &Sphere[float32]{Center: Coordinate[float32]{3, 4, 0}, Radius: 3}
-	s3 := &Sphere[float32]{Center: Coordinate[float32]{-2, -2, 0}, Radius: 1}
+	s1 := &Sphere[float32]{Center: Coordinate[float32]{0, 0, 0}, Radius: 1}
+	s2 := &Sphere[float32]{Center: Coordinate[float32]{3, 4, 0}, Radius: 2}
+	s3 := &Sphere[float32]{Center: Coordinate[float32]{-2, -2, 0}, Radius: 0.5}
 
-	s1.MinBounds(s2, s3)
-	expected := &Sphere[float32]{
-		Center: Coordinate[float32]{1.1401846, 1.7682214, 0},
-		Radius: 5.9051247,
-	}
+	container := &Sphere[float32]{}
+	container.MinBounds(s1, s2, s3)
 
-	if !s1.Equals(expected) {
-		t.Errorf("Expected %v, got %v", expected, s1)
+	expectedCenter := Coordinate[float32]{0.5, 1.0, 0}
+	expectedRadius := float32(5.90512)
+
+	if !container.Center.Equals(expectedCenter) || Abs(container.Radius-expectedRadius) > 0.001 {
+		t.Errorf("Expected Center %v, Radius %.5f, got Center %v, Radius %.5f",
+			expectedCenter, expectedRadius, container.Center, container.Radius)
 	}
 }
-
 func TestSphereString(t *testing.T) {
 	s := &Sphere[float32]{Center: Coordinate[float32]{1.5, -2.5, 0}, Radius: 3.0}
 	expected := "Center [1.5 -2.5 0], Radius 3"

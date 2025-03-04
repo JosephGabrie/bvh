@@ -25,7 +25,9 @@ func (s *Sphere[T]) Contains(other VolumeType[T]) bool {
 	dist := Distance(s.Center, otherSphere.Center)
 	return dist+otherSphere.Radius <= s.Radius
 }
+
 func (s *Sphere[T]) MinBounds(volumes ...VolumeType[T]) {
+	var scale = 0.5
 	var spheres []*Sphere[T]
 	for _, v := range volumes {
 		if sphere, ok := v.(*Sphere[T]); ok {
@@ -35,20 +37,41 @@ func (s *Sphere[T]) MinBounds(volumes ...VolumeType[T]) {
 	if len(spheres) == 0 {
 		return
 	}
-	s.Center = spheres[0].Center
-	s.Radius = spheres[0].Radius
-	for _, sphere := range spheres[1:] {
-		diff := sphere.Center.Sub(s.Center)
-		distance := diff.Length()
 
-		if distance+sphere.Radius <= s.Radius {
-			continue
+	// Handle single sphere case
+	if len(spheres) == 1 {
+		*s = *spheres[0]
+		return
+	}
+
+	// Find initial candidate using farthest points
+	var maxDist T
+	var c1, c2 Coordinate[T]
+
+	// Find the two farthest apart spheres
+	for i := 0; i < len(spheres); i++ {
+		for j := i + 1; j < len(spheres); j++ {
+			dist := Distance(spheres[i].Center, spheres[j].Center) +
+				spheres[i].Radius + spheres[j].Radius
+			if dist > maxDist {
+				maxDist = dist
+				c1 = spheres[i].Center
+				c2 = spheres[j].Center
+			}
 		}
+	}
 
-		newRadius := (s.Radius + distance + sphere.Radius) / 2
-		direction := diff.Normalize()
-		s.Center = s.Center.Add(direction.Scale(newRadius - s.Radius))
-		s.Radius = newRadius
+	// Create initial sphere enclosing the two farthest spheres
+	s.Center = c1.Add(c2.Sub(c1).Scale(T(scale)))
+	s.Radius = maxDist / 2
+
+	// Expand sphere to contain all other spheres
+	for _, sphere := range spheres {
+		distToCenter := Distance(s.Center, sphere.Center)
+		requiredRadius := distToCenter + sphere.Radius
+		if requiredRadius > s.Radius {
+			s.Radius = requiredRadius
+		}
 	}
 }
 
